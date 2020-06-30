@@ -8,7 +8,7 @@ def commandList():
         'Add Device(s)', #done
         'Remove Device(s)', #done
         'Rename Device',
-        'Bulk Add Address',
+        'Bulk Add Address', #done
         'Add VLAN',
         'Delete VLAN', #done
         'Swap MX Warm Spare', #done
@@ -72,18 +72,17 @@ def swapWarmSpare(net_id):
     dashboard.appliance.swapNetworkApplianceWarmSpare(net_id)
 
 #createVLAN() API call
-def createVLAN(net_id,vlan_name,subnet,appliance_ip):
-    dashboard.appliance.createNetworkApplianceVlan(
-        net_id, vlan_, name, subnet, appliance_ip, 
-        groupPolicyId='101')
+# def createVLAN(net_id,vlan_name,subnet,appliance_ip):
+#     dashboard.appliance.createNetworkApplianceVlan(
+#         net_id, vlan_, name, subnet, appliance_ip, 
+#         groupPolicyId='101')
 
 #blinkDeviceLeds() API call
 def blinkDevice(serial):
     dashboard.devices.blinkDeviceLeds(serial, duration=20, period=160, duty=50)
 
-def changeDevAddress(serials,address): #bulk change address
-    for device in serials:
-        dashboard.devices.updateDevice(address='')
+def setAddress(serials,address): #bulk change address
+    dashboard.devices.updateDevice(serials,address=address)
 
 # def updateDevSwitchport():
 #     dashboard.switch.updateDeviceSwitchPort(
