@@ -65,8 +65,8 @@ def removeDevices(net_id,serial):
     dashboard.networks.removeNetworkDevices(net_id,serial)
 
 #renames device
-def renameDevice(serial,name):
-    dashboard.devices.updateDevice(serial,name=name)
+def renameDevice(serial,dev_name):
+    dashboard.devices.updateDevice(serial,name=dev_name)
 
 #swapNetworkApplianceWamSpare() API call
 def swapWarmSpare(net_id):
