@@ -72,10 +72,9 @@ def swapWarmSpare(net_id):
     dashboard.appliance.swapNetworkApplianceWarmSpare(net_id)
 
 #createVLAN() API call
-# def createVLAN(net_id,vlan_name,subnet,appliance_ip):
-#     dashboard.appliance.createNetworkApplianceVlan(
-#         net_id, vlan_, name, subnet, appliance_ip, 
-#         groupPolicyId='101')
+def createVLAN(net_id,id,name,subnet,ip):
+    dashboard.appliance.createNetworkApplianceVlan(
+        net_id,id,name,subnet,ip)
 
 #blinkDeviceLeds() API call
 def blinkDevice(serial):

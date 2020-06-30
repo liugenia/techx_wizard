@@ -49,15 +49,16 @@ class MerakiWizard(Frame):
             pass
         elif self.selected=='Delete Network':
             deleteNetwork(self.getNetID())
+            self.popuNetNames()
         elif self.selected=='Add Device(s)': #automatically adds all devices on .csv file
             claimDevices(self.getNetID(),self.getDevicesExcel())
             self.popuDevNames()
         elif self.selected=='Remove Device(s)': #removes the devices selected or all devices
             self.delDevices()
-        elif self.selected=='Bulk Add Address':
+        elif self.selected=='Bulk Add Address': #adds the input address for all devices
             self.infoPopup()
         elif self.selected=='Add VLAN':
-            pass
+            self.infoPopup()
         elif self.selected=='Delete VLAN':
             self.infoPopup()
         elif self.selected=='Swap MX Warm Spare':
@@ -72,18 +73,39 @@ class MerakiWizard(Frame):
             self.getInput.pack()
             self.addrEntry=Entry(self.entry)
             self.addrEntry.pack()
-        if self.selected=='Delete VLAN':
+        elif self.selected=='Add VLAN':
+            self.getID=Label(self.entry,text='ID:')
+            self.getID.pack()
+            self.idEnt=Entry(self.entry)
+            self.idEnt.pack()
+            self.getName=Label(self.entry,text='Name:')
+            self.getName.pack()
+            self.nameEnt=Entry(self.entry)
+            self.nameEnt.pack()
+            self.getSubnet=Label(self.entry,text='Subnet:')
+            self.getSubnet.pack()
+            self.subEnt=Entry(self.entry)
+            self.subEnt.pack()
+            self.getAppIp=Label(self.entry,text='Appliance IP:')
+            self.getAppIp.pack()
+            self.appEnt=Entry(self.entry)
+            self.appEnt.pack()
+        elif self.selected=='Delete VLAN':
             self.getInput=Label(self.entry,text='Enter VLAN ID:')
             self.getInput.pack()
             self.vlanIdEntry=Entry(self.entry)
             self.vlanIdEntry.pack()
-        self.doneButton=Button(self.entry,text='Done',command=self.QuitInput)
+        self.doneButton=Button(self.entry,text='Done',command=self.quitInput)
         self.doneButton.pack()
-    def QuitInput(self):
+    def quitInput(self):
         self.selected=self.alter.get()
         if self.selected=='Bulk Add Address':
             for device in self.getNetDevSerials():
                 setAddress(device,self.addrEntry.get())
+        elif self.selected=='Add VLAN':
+            createVLAN(
+                self.getNetID(),self.idEnt.get(),self.nameEnt.get(),
+                self.subEnt.get(),self.appEnt.get())
         elif self.selected=='Delete VLAN':
             removeVLAN(self.getNetID(),self.vlanIdEntry.get())
         self.entry.destroy()
