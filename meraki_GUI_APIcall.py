@@ -8,12 +8,11 @@ def commandList():
         'Add Device(s)', #done
         'Remove Device(s)', #done
         'Rename Device',
-        'Add VLAN',
-        'Delete VLAN',
         'Bulk Add Address',
+        'Add VLAN',
+        'Delete VLAN', #done
         'Swap MX Warm Spare', #done
         'Blink LED', #done
-        'Change Device Address',
         'Update Device Port'
         ]
     return commands
@@ -70,7 +69,7 @@ def removeDevices(net_id,serial):
 
 #swapNetworkApplianceWamSpare() API call
 def swapWarmSpare(net_id):
-    response = dashboard.appliance.swapNetworkApplianceWarmSpare(net_id)
+    dashboard.appliance.swapNetworkApplianceWarmSpare(net_id)
 
 #createVLAN() API call
 def createVLAN(net_id,vlan_name,subnet,appliance_ip):
@@ -128,4 +127,4 @@ def changeDevAddress(serials,address): #bulk change address
 # )
 
 def removeVLAN(net_id,vlan_id):
-    pass
+    dashboard.appliance.deleteNetworkApplianceVlan(net_id, vlan_id)

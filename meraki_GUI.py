@@ -42,7 +42,7 @@ class MerakiWizard(Frame):
             root,text='Select Action',command=self.AlterMenu, bg='#049fd9', fg='white')
         self.selectButton.grid(row=4,column=1)
 
-    ####DROPDOWN ALTERATAION MENU####
+    ####ALTERATION DROPDOWN MENU####
     def AlterMenu(self):
         self.selected=self.alter.get()
         if self.selected=='Create Network':
@@ -54,10 +54,23 @@ class MerakiWizard(Frame):
             self.popuDevNames()
         elif self.selected=='Remove Device(s)': #removes the devices selected or all devices
             self.delDevices()
+        elif self.selected=='Delete VLAN':
+            self.entry=Toplevel(root)
+            self.getVlanId=Label(self.entry,text='Enter VLAN ID:')
+            self.getVlanId.pack()
+            self.vlanIdEntry=Entry(self.entry)
+            self.vlanIdEntry.pack()
+            doneButton=self.doneButton=Button(self.entry,text='Done',command=self.QuitInput)
+            doneButton.pack()
         elif self.selected=='Swap MX Warm Spare':
             swapWarmSpare(self.getNetID())
         elif self.selected=='Blink LED':
             blinkDevice(self.getDevSerial())
+    def QuitInput(self):
+        self.selected=self.alter.get()
+        if self.selected=='Delete VLAN':
+            removeVLAN(self.getNetID(),self.vlanIdEntry.get())
+        self.entry.destroy()
 
     ####ORG FUNCTIONS####
     def getOrgList(self): #return the list of accessible orgs
@@ -149,10 +162,13 @@ class MerakiWizard(Frame):
                 removeDevices(self.getNetID(),ser)
         self.popuDevNames()
 
-####INPUT POPUP WHEN SELECTED OPTION REQUIRES IT####
-class InputPopup:
-    def __init__(self,parent,*args,**kwargs):
-        self.popup=Toplevel(root)
+# ####INPUT POPUP WHEN SELECTED OPTION REQUIRES IT####
+# class InputPopup:
+#     def __init__(self,master):
+#         popup=self.popup=Toplevel(root)
+#         self.popLabel=Label(popup,text='Input the address you want for the devices:').pack()
+#         self.popEntry=Entry(popup).pack()
+#         self.popButton=Button(popup,text='ok',command=self.popup.destroy)
 
 
 if __name__=="__main__":
