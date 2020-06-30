@@ -7,13 +7,13 @@ def commandList():
         'Delete Network', 
         'Add Device(s)', #done
         'Remove Device(s)', #done
-        'Rename Device',
+        'Rename Device', #done
         'Bulk Add Address', #done
-        'Add VLAN',
+        'Add VLAN', #done
         'Delete VLAN', #done
         'Swap MX Warm Spare', #done
         'Blink LED', #done
-        'Update Device Port'
+        'Update Device Port' #done
         ]
     return commands
 
@@ -44,7 +44,7 @@ def specDevInfo(serial):
 
 #getNetworkApplianceVlans() API call
 def getNetVlan(net_id):
-    getNetVlan=dashboard.appliance.getNetworkApplianceVlans(network_id)
+    getNetVlan=dashboard.appliance.getNetworkApplianceVlans(net_id)
     return getNetVlan
 
 ####MAKING CHANGES TO THE NETWORK####
@@ -65,7 +65,8 @@ def removeDevices(net_id,serial):
     dashboard.networks.removeNetworkDevices(net_id,serial)
 
 #renames device
-
+def renameDevice(serial,name):
+    dashboard.devices.updateDevice(serial,name=name)
 
 #swapNetworkApplianceWamSpare() API call
 def swapWarmSpare(net_id):
@@ -83,27 +84,12 @@ def blinkDevice(serial):
 def setAddress(serials,address): #bulk change address
     dashboard.devices.updateDevice(serials,address=address)
 
-# def updateDevSwitchport():
-#     dashboard.switch.updateDeviceSwitchPort(
-#         serial, port_id, 
-#         name='My switch port', 
-#         tags=['tag1', 'tag2'], 
-#         enabled=True, 
-#         type='access', 
-#         vlan=10, 
-#         voiceVlan=20, 
-#         poeEnabled=True, 
-#         isolationEnabled=False, 
-#         rstpEnabled=True, 
-#         stpGuard='disabled', 
-#         linkNegotiation='Auto negotiate', 
-#         portScheduleId='1234', 
-#         udld='Alert only', 
-#         accessPolicyType='Sticky MAC whitelist', 
-#         stickyMacWhitelist=['34:56:fe:ce:8e:b0', '34:56:fe:ce:8e:b1'], 
-#         stickyMacWhitelistLimit=5, 
-#         stormControlEnabled=True
-#     )
+def updateDevSwitchport(serial,id,port_type,vlan):
+    dashboard.switch.updateDeviceSwitchPort(
+        serial, id, 
+        type=port_type, 
+        vlan=vlan,
+    )
 
 #updateNetworkApplianceVlan() API call
 # def updateVLAN():
