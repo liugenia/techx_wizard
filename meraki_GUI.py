@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import filedialog as fd
 from meraki_GUI_APIcall import *
 import xlrd
+import numpy
 
 class MerakiWizard(Frame):
     ####MERAKI GUI INTERFACE####
@@ -50,29 +51,38 @@ class MerakiWizard(Frame):
         elif self.selected=='Delete Network': #deletes network and all devices
             deleteNetwork(self.getNetID())
             self.popuNetNames()
-        elif self.selected=='Add Device(s)': #automatically adds all devices on .csv file
+        elif self.selected=='Add Device': #adds a single device to the network
+            self.infoPopup()
+            self.popuDevNames()
+        elif self.selected=='Bulk Add Devices': #automatically adds all devices on .csv file
             claimDevices(self.getNetID(),self.getDevicesExcel())
+            self.popuDevNames()
+        elif self.selected=='Rename Device': #renames a device that is selected from listbox
+            self.infoPopup()
             self.popuDevNames()
         elif self.selected=='Remove Device(s)': #removes the devices selected or all devices
             self.delDevices()
-        elif self.selected=='Rename Device': #renames a device that is selected from listbox
-            self.infoPopup()  
         elif self.selected=='Bulk Add Address': #adds the input address for all devices
             self.infoPopup()
         elif self.selected=='Add VLAN': #adds a VLAN given user input
             self.infoPopup()
         elif self.selected=='Delete VLAN': #deletes VLAN given the VLAN ID
             self.infoPopup()
-        elif self.selected=='Swap MX Warm Spare': 
-            swapWarmSpare(self.getNetID())
-        elif self.selected=='Blink LED':
+        elif self.selected=='Swap MX Warm Spare': #switches primary and warm MX
+            swapWarmSpare(self.getNetID()) 
+        elif self.selected=='Blink LED': #blinks LED of chosen device
             blinkDevice(self.getDevSerial())
-        elif self.selected=='Update Device Port':
+        elif self.selected=='Update Device Port': #updates port type and vlan on chosen device
             self.infoPopup()
-    def infoPopup(self):
+    def infoPopup(self): #popup menu if needed for inputs required 
         self.selected=self.alter.get()
         self.entry=Toplevel()
-        if self.selected=='Rename Device':
+        if self.selected=='Add Device':
+            self.getInput=Label(self.entry,text='Enter Device SN:')
+            self.getInput.pack()
+            self.devSnEntry=Entry(self.entry)
+            self.devSnEntry.pack()
+        elif self.selected=='Rename Device':
             self.getInput=Label(self.entry,text='Rename device to:')
             self.getInput.pack()
             self.renameEntry=Entry(self.entry)
@@ -121,22 +131,32 @@ class MerakiWizard(Frame):
         self.doneButton.pack()     
     def quitInput(self):
         self.selected=self.alter.get()
-        if self.selected=='Rename Device':
+        if self.selected=='Add Device':
+            self.to_add=[]
+            self.to_add.append(str(self.devSnEntry.get()))
+            claimDevices(self.getNetID(),self.to_add)
+            self.popuDevNames()
+        elif self.selected=='Rename Device': #do NOT name devices the same name, this will make the program bug out
             renameDevice(self.getDevSerial(),self.renameEntry.get())
             self.popuDevNames()
+        elif self.selected=='Update Device Port': #if you specify trunk you shouldn't be adding a VLAN!!!
+            if self.vlanEnt.get():
+                updateDevSwitchportVLAN(
+                    self.getDevSerial(),self.idEnt.get(),
+                    self.typeEnt.get(),self.vlanEnt.get())
+            else:
+                updateDevSwitchport(
+                    self.getDevSerial(),self.idEnt.get(),
+                    self.typeEnt.get()) 
         elif self.selected=='Bulk Add Address':
             for device in self.getNetDevSerials():
-                setAddress(device,self.addrEntry.get())
+                setAddress(device,self.addrEntry.get())  
         elif self.selected=='Add VLAN':
             createVLAN(
                 self.getNetID(),self.idEnt.get(),self.nameEnt.get(),
                 self.subEnt.get(),self.appEnt.get())
         elif self.selected=='Delete VLAN':
-            removeVLAN(self.getNetID(),self.vlanIdEntry.get())
-        elif self.selected=='Update Device Port':
-            updateDevSwitchport(
-                self.getDevSerial(),self.idEnt.get(),
-                self.typeEnt.get(),self.vlanEnt.get())
+            removeVLAN(self.getNetID(),self.vlanIdEntry.get())  
         self.entry.destroy()
 
     ####ORG FUNCTIONS####

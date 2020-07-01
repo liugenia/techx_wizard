@@ -3,11 +3,13 @@ import os
 
 def commandList():
     commands=[
-        'Create Network',
-        'Delete Network', 
-        'Add Device(s)', #done
-        'Remove Device(s)', #done
+        # 'Create Network', ####NEED FULL ORG ADMIN ACCESS FOR THIS####
+        # 'Delete Network', 
+        'Add Device', #done
+        'Bulk Add Devices', #done
         'Rename Device', #done
+        'Remove Device(s)', #done
+        'Update Device Port', #done
         'Bulk Add Address', #done
         'Add VLAN', #done
         'Delete VLAN', #done
@@ -84,7 +86,13 @@ def blinkDevice(serial):
 def setAddress(serials,address): #bulk change address
     dashboard.devices.updateDevice(serials,address=address)
 
-def updateDevSwitchport(serial,id,port_type,vlan):
+def updateDevSwitchport(serial,id,port_type):
+    dashboard.switch.updateDeviceSwitchPort(
+        serial, id, 
+        type=port_type,
+    )
+
+def updateDevSwitchportVLAN(serial,id,port_type,vlan):
     dashboard.switch.updateDeviceSwitchPort(
         serial, id, 
         type=port_type, 
