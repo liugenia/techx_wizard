@@ -15,15 +15,14 @@ def commandList():
         'Delete VLAN', #done
         'Swap MX Warm Spare', #done
         'Blink LED', #done
-        'Update Device Port' #done
         ]
     return commands
 
 ####GETTING INFORMATION####
 #API key and dashboard
 API_KEY=os.environ.get('Meraki_API')
-dashboard=meraki.DashboardAPI(API_KEY, output_log=False, print_console=False)
-# dashboard=meraki.DashboardAPI(API_KEY)
+# dashboard=meraki.DashboardAPI(API_KEY, output_log=False, print_console=False)
+dashboard=meraki.DashboardAPI(API_KEY)
 
 #getOrganizations() API call
 def orgInfo():
@@ -34,6 +33,10 @@ def orgInfo():
 def orgNetInfo(org_id):
     getOrgNet=dashboard.organizations.getOrganizationNetworks(org_id, total_pages='all')
     return getOrgNet
+
+#getNetwork() API call
+def netInfo(net_id):
+    dashboard.networks.getNetwork(net_id)
 
 #getNetworkDevices() API call
 def deviceInfo(net_id):
@@ -70,6 +73,10 @@ def removeDevices(net_id,serial):
 def renameDevice(serial,dev_name):
     dashboard.devices.updateDevice(serial,name=dev_name)
 
+#bulk adds address when called for each SN in network
+def setAddress(serials,address):
+    dashboard.devices.updateDevice(serials,address=address)
+
 #swapNetworkApplianceWamSpare() API call
 def swapWarmSpare(net_id):
     dashboard.appliance.swapNetworkApplianceWarmSpare(net_id)
@@ -77,46 +84,32 @@ def swapWarmSpare(net_id):
 #createVLAN() API call
 def createVLAN(net_id,id,name,subnet,ip):
     dashboard.appliance.createNetworkApplianceVlan(
-        net_id,id,name,subnet,ip)
+        net_id,id,name,subnet,ip
+        )
 
 #blinkDeviceLeds() API call
 def blinkDevice(serial):
     dashboard.devices.blinkDeviceLeds(serial, duration=20, period=160, duty=50)
 
-def setAddress(serials,address): #bulk change address
-    dashboard.devices.updateDevice(serials,address=address)
-
+#if no VLAN input aka trunk port update or access port with unchanged VLAN ID
 def updateDevSwitchport(serial,id,port_type):
     dashboard.switch.updateDeviceSwitchPort(
         serial, id, 
         type=port_type,
     )
 
+#if there is a VLAN input aka access port update
 def updateDevSwitchportVLAN(serial,id,port_type,vlan):
     dashboard.switch.updateDeviceSwitchPort(
         serial, id, 
         type=port_type, 
-        vlan=vlan,
+        vlan=vlan
     )
 
 #updateNetworkApplianceVlan() API call
-# def updateVLAN():
-#     response = dashboard.appliance.updateNetworkApplianceVlan(
-#     network_id, vlan_id, 
-#     name='My VLAN', 
-#     subnet='192.168.1.0/24', 
-#     applianceIp='192.168.1.2', 
-#     groupPolicyId='101', 
-#     dhcpHandling='Run a DHCP server', 
-#     dhcpLeaseTime='1 day', 
-#     dhcpBootOptionsEnabled=False, 
-#     dhcpBootNextServer=None, 
-#     dhcpBootFilename=None, 
-#     fixedIpAssignments={'22:33:44:55:66:77': {'ip': '1.2.3.4', 'name': 'Some client name'}}, 
-#     reservedIpRanges=[{'start': '192.168.1.0', 'end': '192.168.1.1', 'comment': 'A reserved IP range'}], 
-#     dnsNameservers='google_dns', 
-#     dhcpOptions=[{'code': 5, 'type': 'text', 'value': 'five'}]
-# )
+def updateVLAN(vlan_id,ip):
+    dashboard.appliance.updateNetworkApplianceVlan(vlan_id,ip)
 
+#deleteNetworkApplianceVlan() API call
 def removeVLAN(net_id,vlan_id):
     dashboard.appliance.deleteNetworkApplianceVlan(net_id, vlan_id)
