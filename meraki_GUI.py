@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import filedialog as fd
 from meraki_GUI_APIcall import *
 import xlrd
+import re
 
 class MerakiWizard(Frame):
 
@@ -9,7 +10,6 @@ class MerakiWizard(Frame):
     def __init__(self,parent,*args,**kwargs):
         self.parent=parent
         self.org_info=orgInfo()
-
         ####PROMPTS USER TO SELECT ORGANIZATION####
         self.org_title=Label(text="Select Organization")
         self.org_title.grid(row=0,column=0)
@@ -19,7 +19,6 @@ class MerakiWizard(Frame):
         for org_name in self.getOrgList():
             self.orgMenu.insert(END,org_name)
             self.orgMenu.bind("<<ListboxSelect>>", self.popuNetNames)
-
         ####PROMPTS USER TO SELECT NETWORK####
         self.net_title=Label(text="Select Network")
         self.net_title.grid(row=0, column=1)
@@ -27,7 +26,6 @@ class MerakiWizard(Frame):
         self.netMenu=Listbox(root,exportselection=False)
         self.netMenu.grid(row=1, column=1)
         self.netMenu.bind("<<ListboxSelect>>", self.popuDevNames)
-
         ####PROMPTS USER TO SELECT DEVICE####
         self.net_title=Label(text="Select Device")
         self.net_title.grid(row=0, column=2)
@@ -35,7 +33,6 @@ class MerakiWizard(Frame):
         self.devMenu=Listbox(root,exportselection=False)
         self.devMenu.grid(row=1,column=2)
         self.devMenu.bind("<<ListboxSelect>>", self.devInfoClick)
-
         ####PROMPTS USER TO SELECT AN ACTION THEY WANT TO PERFORM####
         #Alteration OptionMenu: list of things to do on (1)org (2)network (3)device level
         self.commands=commandList()
@@ -47,7 +44,6 @@ class MerakiWizard(Frame):
         self.selectButton=Button(
             root,text='Select Action',command=self.AlterMenu, bg='#049fd9', fg='white')
         self.selectButton.grid(row=4,column=1)
-
     ####ALTERATION OPTIONMENU####
     def AlterMenu(self): #what to do depending on the option selected
         self.selected=self.alter.get()
@@ -58,7 +54,9 @@ class MerakiWizard(Frame):
         elif self.selected=='Add Device': #adds a single device to the network
             self.infoPopup()
         elif self.selected=='Bulk Add Devices': #automatically adds all devices on .xls file
-            claimDevices(self.getNetID(),self.getDevicesExcel())
+            claimDevices(self.getNetID(),self.bulkAddExcel())
+            self.bulkRenameExcel()
+            self.popuDevNames()
         elif self.selected=='Rename Device': #renames a device that is selected from listbox
             self.infoPopup()
         ###BULK RENAME DEVICE in progress. takes device names, {show name}-{model}-(#) --> RSA-SW-1 ####
@@ -168,7 +166,7 @@ class MerakiWizard(Frame):
         self.org_id=''
         for orgs in self.org_info:
             if orgs['name']==self.name:
-               self.org_id+=orgs['id']
+                self.org_id+=orgs['id']
         return self.org_id
     def getOrgNetIDs(self): #get list all network IDs in an org given org ID
         self.net_ids=[]
@@ -177,7 +175,7 @@ class MerakiWizard(Frame):
                 self.net_ids.append(nets['id'])
         return self.net_ids
     def getOrgNetNames(self): #get list of all network names given list of netID
-        self.net_names=sorted([net['name'] for net in orgNetInfo(self.getOrgID())])
+        self.net_names=[net['name'] for net in orgNetInfo(self.getOrgID())]
         return self.net_names
     def popuNetNames(self,*args): #populates listbox on click per orgNetwork button, refreshes each new click
         self.netMenu.delete(0,END)
@@ -199,7 +197,7 @@ class MerakiWizard(Frame):
 
     ####DEVICE FUNCTIONS####
     def getDevNames(self): #gets list of device names in a network
-        self.dev_names=sorted([dev['name'] for dev in deviceInfo(self.getNetID())])
+        self.dev_names=[dev['name'] for dev in deviceInfo(self.getNetID())]
         return self.dev_names
     def popuDevNames(self,*args): #populates listbox on click of selecting network
         self.devMenu.delete(0,END)
@@ -215,16 +213,21 @@ class MerakiWizard(Frame):
         return self.curr_dev
     def devInfoClick(self,*args):
         print(specDevInfo(self.getDevSerial()))
-    def getDevicesExcel(self,*args): #Add devices given JLL .xls(x) file
-        self.file_name=fd.askopenfilename(initialdir='/',title='Select A File',filetypes=(('.xls','*.xls'),('all files','.')))
+    def bulkAddExcel(self,*args): #Add devices given JLL .xlsx file
+        self.pattern=re.compile(r"^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$") #xxxx-xxxx-xxxx Meraki SN format checker
+        self.file_name=fd.askopenfilename(initialdir='/',title='Select A File',filetypes=(('.xlsx','*.xlsx'),('all files','.')))
         self.wb=xlrd.open_workbook(self.file_name)
         self.sheet=self.wb.sheet_by_index(0)
         self.meraki_devices=[]
         for row in range(self.sheet.nrows):
-            if self.sheet.cell_value(row,40)!='Approved-Cancelled':
-                self.meraki_devices.append(self.sheet.cell_value(row,24))
-        return self.meraki_devices[3:]
-        ####needs to filter out only meraki devices in update####
+            if self.sheet.cell_value(row,40)!='Approved-Cancelled' and self.pattern.match(self.sheet.cell_value(row,24)):
+                    self.meraki_devices.append(self.sheet.cell_value(row,24))
+        return self.meraki_devices
+    def bulkRenameExcel(self,*args):
+        self.net_devs=deviceInfo(self.getNetID())
+        for device in self.net_devs:
+            self.name=device['model']+'_'+device['serial'][-4:]
+            renameDevice(device['serial'],self.name)
     def addDevice(self,*args): #adds a specific device given
         self.to_add=[] #the SN passed into the API call is supposed to be a tuple
         self.to_add.append(str(self.devSnEntry.get()))
