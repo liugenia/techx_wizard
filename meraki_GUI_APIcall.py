@@ -38,6 +38,9 @@ def orgNetInfo(org_id):
 def netInfo(net_id):
     dashboard.networks.getNetwork(net_id)
 
+def netVlanInfo(net_id):
+    dashboard.appliance.getNetworkApplianceVlans(net_id)
+
 #getNetworkDevices() API call
 def deviceInfo(net_id):
     getNetDevices=dashboard.networks.getNetworkDevices(net_id)

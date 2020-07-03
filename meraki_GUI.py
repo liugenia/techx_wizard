@@ -44,11 +44,11 @@ class MerakiWizard(Frame):
         self.selectButton=Button(
             root,text='Select Action',command=self.AlterMenu, bg='#049fd9', fg='white')
         self.selectButton.grid(row=4,column=1)
-    ####ALTERATION OPTIONMENU####
+    ####ALTERATION SELECTION HANDLER####
     def AlterMenu(self): #what to do depending on the option selected
         self.selected=self.alter.get()
         if self.selected=='Create Network':
-            pass
+            self.setDefaultVlans()
         elif self.selected=='Delete Network': #deletes network and all devices
             deleteNetwork(self.getNetID())
         elif self.selected=='Add Device': #adds a single device to the network
@@ -59,14 +59,12 @@ class MerakiWizard(Frame):
             self.popuDevNames()
         elif self.selected=='Rename Device': #renames a device that is selected from listbox
             self.infoPopup()
-        ###BULK RENAME DEVICE in progress. takes device names, {show name}-{model}-(#) --> RSA-SW-1 ####
         elif self.selected=='Remove Device(s)': #removes the devices selected or all devices
             self.delDevices()
         elif self.selected=='Bulk Add Address': #adds the trade show or event address to all devices
             self.infoPopup()
         elif self.selected=='Add VLAN': #adds a VLAN given user input of required info
             self.infoPopup()
-        ####BULK ADD DEFAULT VLANS in progress. Takes Vlan ID, Name, Subnet, Appliance IP from excel file and auto adds the vlans
         elif self.selected=='Delete VLAN': #deletes VLAN given the VLAN ID
             self.infoPopup()
         elif self.selected=='Swap MX Warm Spare': #switches primary and warm MX
@@ -145,7 +143,7 @@ class MerakiWizard(Frame):
             else: #if changing to trunk/if no VLAN specified and want to change other info
                 updateDevSwitchport(
                     self.getDevSerial(),self.idEnt.get(),
-                    self.typeEnt.get()) 
+                    self.typeEnt.get())
         elif self.selected=='Bulk Add Address':
             for device in self.getNetDevSerials():
                 setAddress(device,self.addrEntry.get())  
@@ -194,6 +192,18 @@ class MerakiWizard(Frame):
     def getNetDevSerials(self): #gets SN of all network devices
         self.net_serials=[device['serial'] for device in deviceInfo(self.getNetID())]
         return self.net_serials
+    def setDefaultVlans(self):
+        self.default=[
+            {'id': '100', 'name': 'Management', 'subnet': '10.0.100.0/24', 'appl_ip': '10.0.100.1'},
+            {'id': '110', 'name': 'Staff VLAN', 'subnet': '10.0.110.0/24', 'appl_ip': '10.0.110.1'},
+            {'id': '120', 'name': 'Staff Wireless', 'subnet': '10.0.120.0/24', 'appl_ip': '10.0.120.1'},
+            {'id': '130', 'name': 'Camera', 'subnet': '10.0.130.0/24', 'appl_ip': '10.0.130.1'},
+            {'id': '200', 'name': 'Demo Wireless', 'subnet': '10.0.200.0/24', 'appl_ip': '10.0.200.1'},
+            {'id': '201', 'name': 'Demo 01', 'subnet': '10.0.201.0/24', 'appl_ip': '10.0.201.1'},
+            {'id': '202', 'name': 'Demo 02', 'subnet': '10.0.202.0/24', 'appl_ip': '10.0.202.1'}
+            ]
+        for vlan in self.default:
+            createVLAN(self.getNetID(),vlan['id'],vlan['name'],vlan['subnet'],vlan['appl_ip'])
 
     ####DEVICE FUNCTIONS####
     def getDevNames(self): #gets list of device names in a network
@@ -204,10 +214,10 @@ class MerakiWizard(Frame):
         for name in self.getDevNames():
             self.devMenu.insert(END,name)
     def getDevSerial(self,*args): #gets the device SN given the listbox selection
-        self.net_devs=deviceInfo(self.getNetID())
+        self.dev_list=deviceInfo(self.getNetID())
         self.name=self.devMenu.get(self.devMenu.curselection())
         self.curr_dev=''
-        for devs in self.net_devs:
+        for devs in self.dev_list:
             if devs['name']==self.name:
                 self.curr_dev+=devs['serial']
         return self.curr_dev
@@ -222,23 +232,18 @@ class MerakiWizard(Frame):
         for row in range(self.sheet.nrows):
             if self.sheet.cell_value(row,40)!='Approved-Cancelled' and self.pattern.match(self.sheet.cell_value(row,24)):
                     self.meraki_devices.append(self.sheet.cell_value(row,24))
-        return self.meraki_devices
-    def bulkRenameExcel(self,*args):
-        self.net_devs=deviceInfo(self.getNetID())
-        for device in self.net_devs:
-            self.name=device['model']+'_'+device['serial'][-4:]
-            renameDevice(device['serial'],self.name)
+        return self.meraki_devices 
+    def bulkRenameExcel(self,*args): #renames devices with model + last 4 digits of SN
+        for device in deviceInfo(self.getNetID()):
+            renameDevice(device['serial'],(device['model']+'_'+device['serial'][-4:]))
     def addDevice(self,*args): #adds a specific device given
-        self.to_add=[] #the SN passed into the API call is supposed to be a tuple
-        self.to_add.append(str(self.devSnEntry.get()))
-        claimDevices(self.getNetID(),self.to_add)
+        claimDevices(self.getNetID(),[self.devSnEntry.get()])
         self.popuDevNames()
     def delDevices(self,*args): #deletes (1)selected device (2)all devices of selected network
         if self.devMenu.curselection():
             removeDevices(self.getNetID(),self.getDevSerial())
-        else:
-            for ser in self.getNetDevSerials():
-                removeDevices(self.getNetID(),ser)
+        for serial in self.getNetDevSerials():
+            removeDevices(self.getNetID(),serial)
         self.popuDevNames()
 
 if __name__=="__main__":
