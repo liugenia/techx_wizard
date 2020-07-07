@@ -29,7 +29,7 @@ class MerakiWizard(Frame):
         ####PROMPTS USER TO SELECT DEVICE####
         self.net_title=Label(text="Select Device")
         self.net_title.grid(row=0, column=2)
-        #Device Listbox: Takes Device Name, passes Device 
+        #Device Listbox: Takes Device Name, passes Device SN to get device info
         self.devMenu=Listbox(root,exportselection=False)
         self.devMenu.grid(row=1,column=2)
         self.devMenu.bind("<<ListboxSelect>>", self.devInfoClick)
@@ -47,7 +47,7 @@ class MerakiWizard(Frame):
     ####ALTERATION SELECTION HANDLER####
     def AlterMenu(self): #what to do depending on the option selected
         self.selected=self.alter.get()
-        if self.selected=='Create Network':
+        if self.selected=='Create Network': #creates network
             self.setDefaultVlans()
         elif self.selected=='Delete Network': #deletes network and all devices
             deleteNetwork(self.getNetID())
@@ -55,7 +55,7 @@ class MerakiWizard(Frame):
             self.infoPopup()
         elif self.selected=='Bulk Add Devices': #automatically adds all devices on .xls file
             claimDevices(self.getNetID(),self.bulkAddExcel())
-            self.bulkRenameExcel()
+            self.bulkRenameExcel() #renames devices upon addition
             self.popuDevList()
         elif self.selected=='Rename Device': #renames a device that is selected from listbox
             self.infoPopup()
@@ -73,6 +73,8 @@ class MerakiWizard(Frame):
             blinkDevice(self.getDevSerial())
         elif self.selected=='Update Device Port': #updates port type for specefied port (and vlan on chosen device if not trunk)
             self.infoPopup()
+        elif self.selected=='Reboot Device':
+            rebootDevice(self.getDevSerial())
     def infoPopup(self): #popup menu to get the user input of required parameters
         self.selected=self.alter.get()
         self.entry=Toplevel()
@@ -132,7 +134,7 @@ class MerakiWizard(Frame):
         self.selected=self.alter.get()
         if self.selected=='Add Device':
             self.addDevice()
-        elif self.selected=='Rename Device': #do NOT name devices a name that exists currently, this will make the program bug out
+        elif self.selected=='Rename Device': #do NOT rename to a name that exists currently, this will make the program bug out
             renameDevice(self.getDevSerial(),self.renameEntry.get())
             self.popuDevList()
         elif self.selected=='Update Device Port':

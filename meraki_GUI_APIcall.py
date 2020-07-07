@@ -15,14 +15,15 @@ def commandList():
         'Delete VLAN', #done
         'Swap MX Warm Spare', #done
         'Blink LED', #done
+        'Reboot Device'
         ]
     return commands
 
 ####GETTING INFORMATION####
 #API key and dashboard
 API_KEY=os.environ.get('Meraki_API')
-dashboard=meraki.DashboardAPI(API_KEY, output_log=False, print_console=False)
-# dashboard=meraki.DashboardAPI(API_KEY)
+# dashboard=meraki.DashboardAPI(API_KEY, output_log=False, print_console=False)
+dashboard=meraki.DashboardAPI(API_KEY)
 
 #getOrganizations() API call
 def orgInfo():
@@ -116,3 +117,6 @@ def updateVLAN(vlan_id,ip):
 #deleteNetworkApplianceVlan() API call
 def removeVLAN(net_id,vlan_id):
     dashboard.appliance.deleteNetworkApplianceVlan(net_id, vlan_id)
+
+def rebootDevice(serial):
+    dashboard.devices.rebootDevice(serial)
