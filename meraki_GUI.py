@@ -25,7 +25,7 @@ class MerakiWizard(Frame):
         #Network Listbox: takes Network Name, passes Network ID on button click to get list of devices
         self.netMenu=Listbox(root,exportselection=False)
         self.netMenu.grid(row=1, column=1)
-        self.netMenu.bind("<<ListboxSelect>>", self.popuDevNames)
+        self.netMenu.bind("<<ListboxSelect>>", self.popuDevList)
         ####PROMPTS USER TO SELECT DEVICE####
         self.net_title=Label(text="Select Device")
         self.net_title.grid(row=0, column=2)
@@ -56,7 +56,7 @@ class MerakiWizard(Frame):
         elif self.selected=='Bulk Add Devices': #automatically adds all devices on .xls file
             claimDevices(self.getNetID(),self.bulkAddExcel())
             self.bulkRenameExcel()
-            self.popuDevNames()
+            self.popuDevList()
         elif self.selected=='Rename Device': #renames a device that is selected from listbox
             self.infoPopup()
         elif self.selected=='Remove Device(s)': #removes the devices selected or all devices
@@ -134,7 +134,7 @@ class MerakiWizard(Frame):
             self.addDevice()
         elif self.selected=='Rename Device': #do NOT name devices a name that exists currently, this will make the program bug out
             renameDevice(self.getDevSerial(),self.renameEntry.get())
-            self.popuDevNames()
+            self.popuDevList()
         elif self.selected=='Update Device Port':
             if self.vlanEnt.get(): #if changing to access port and want to change/Add associated VLAN
                 updateDevSwitchportVLAN(
@@ -155,7 +155,7 @@ class MerakiWizard(Frame):
             removeVLAN(self.getNetID(),self.vlanIdEntry.get())  
         self.entry.destroy()
 
-    ####ORG FUNCTIONS####
+    ####ORG FUNCTIONS#### 
     def getOrgList(self): #return the list of accessible org names
         self.org_list=sorted([org['name'] for org in self.org_info])
         return self.org_list
@@ -206,20 +206,27 @@ class MerakiWizard(Frame):
             createVLAN(self.getNetID(),vlan['id'],vlan['name'],vlan['subnet'],vlan['appl_ip'])
 
     ####DEVICE FUNCTIONS####
-    def getDevNames(self): #gets list of device names in a network
-        self.dev_names=[dev['name'] for dev in deviceInfo(self.getNetID())]
-        return self.dev_names
-    def popuDevNames(self,*args): #populates listbox on click of selecting network
+    def getDevList(self): #gets list of device names in a network, or SN if no name
+        self.net_info=deviceInfo(self.getNetID())
+        self.dev_list=[]
+        for dev in self.net_info:
+            if 'name' in dev:
+                self.dev_list.append(dev['name'])
+            else:
+                self.dev_list.append(dev['serial'])
+        return self.dev_list
+    def popuDevList(self,*args): #populates listbox on click of selecting network
         self.devMenu.delete(0,END)
-        for name in self.getDevNames():
+        for name in self.getDevList():
             self.devMenu.insert(END,name)
     def getDevSerial(self,*args): #gets the device SN given the listbox selection
-        self.dev_list=deviceInfo(self.getNetID())
-        self.name=self.devMenu.get(self.devMenu.curselection())
+        self.select=self.devMenu.get(self.devMenu.curselection())
         self.curr_dev=''
-        for devs in self.dev_list:
-            if devs['name']==self.name:
-                self.curr_dev+=devs['serial']
+        for dev in deviceInfo(self.getNetID()):
+            if 'name' in dev and dev['name']==self.select:
+                self.curr_dev+=dev['serial']
+            elif 'serial' in dev and dev['serial']==self.select:
+                self.curr_dev+=self.select
         return self.curr_dev
     def devInfoClick(self,*args):
         print(specDevInfo(self.getDevSerial()))
@@ -238,13 +245,14 @@ class MerakiWizard(Frame):
             renameDevice(device['serial'],(device['model']+'_'+device['serial'][-4:]))
     def addDevice(self,*args): #adds a specific device given
         claimDevices(self.getNetID(),[self.devSnEntry.get()])
-        self.popuDevNames()
+        self.popuDevList()
     def delDevices(self,*args): #deletes (1)selected device (2)all devices of selected network
         if self.devMenu.curselection():
             removeDevices(self.getNetID(),self.getDevSerial())
-        for serial in self.getNetDevSerials():
-            removeDevices(self.getNetID(),serial)
-        self.popuDevNames()
+        else:
+            for serial in self.getNetDevSerials():
+                removeDevices(self.getNetID(),serial)
+        self.popuDevList()
 
 if __name__=="__main__":
     root=Tk()
