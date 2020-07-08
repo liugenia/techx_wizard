@@ -8,6 +8,7 @@ def commandList():
         'Add Device', #done
         'Bulk Add Devices', #done
         'Rename Device', #done
+        'Bulk Rename Device',
         'Remove Device(s)', #done
         'Update Device Port', #done
         'Bulk Add Address', #done
@@ -22,8 +23,8 @@ def commandList():
 ####GETTING INFORMATION####
 #API key and dashboard
 API_KEY=os.environ.get('Meraki_API')
-# dashboard=meraki.DashboardAPI(API_KEY, output_log=False, print_console=False)
-dashboard=meraki.DashboardAPI(API_KEY)
+dashboard=meraki.DashboardAPI(API_KEY, output_log=False, print_console=False)
+# dashboard=meraki.DashboardAPI(API_KEY)
 
 #getOrganizations() API call
 def orgInfo():

@@ -13,7 +13,7 @@ class MerakiWizard(Frame):
         ####PROMPTS USER TO SELECT ORGANIZATION####
         self.org_title=Label(text="Select Organization")
         self.org_title.grid(row=0,column=0)
-        #Org Listbox: takes Org Name, passes Org ID on button click to get list of networks
+        #Org Listbox: takes Org Name, passes Org ID on click to get list of networks
         self.orgMenu=Listbox(root,exportselection=False) 
         self.orgMenu.grid(row=1,column=0)
         for org_name in self.getOrgList():
@@ -22,7 +22,7 @@ class MerakiWizard(Frame):
         ####PROMPTS USER TO SELECT NETWORK####
         self.net_title=Label(text="Select Network")
         self.net_title.grid(row=0, column=1)
-        #Network Listbox: takes Network Name, passes Network ID on button click to get list of devices
+        #Network Listbox: takes Network Name, passes Network ID on click to get list of devices
         self.netMenu=Listbox(root,exportselection=False)
         self.netMenu.grid(row=1, column=1)
         self.netMenu.bind("<<ListboxSelect>>", self.popuDevList)
@@ -45,7 +45,7 @@ class MerakiWizard(Frame):
             root,text='Select Action',command=self.AlterMenu, bg='#049fd9', fg='white')
         self.selectButton.grid(row=4,column=1)
     ####ALTERATION SELECTION HANDLER####
-    def AlterMenu(self): #what to do depending on the option selected
+    def AlterMenu(self): #what to do depending on the dropdown option selected
         self.selected=self.alter.get()
         if self.selected=='Create Network': #creates network
             self.setDefaultVlans()
@@ -53,11 +53,13 @@ class MerakiWizard(Frame):
             deleteNetwork(self.getNetID())
         elif self.selected=='Add Device': #adds a single device to the network
             self.infoPopup()
-        elif self.selected=='Bulk Add Devices': #automatically adds all devices on .xls file
-            claimDevices(self.getNetID(),self.bulkAddExcel())
-            self.bulkRenameExcel() #renames devices upon addition
+        elif self.selected=='Bulk Add Devices': #automatically adds all devices on JLL .xlsx file
+            claimDevices(self.getNetID(),self.autoAddExcel())
+            self.autoRenameExcel() #renames devices upon addition
             self.popuDevList()
         elif self.selected=='Rename Device': #renames a device that is selected from listbox
+            self.infoPopup()
+        elif self.selected=='Bulk Rename Device': #renames devices for unique model given show name
             self.infoPopup()
         elif self.selected=='Remove Device(s)': #removes the devices selected or all devices
             self.delDevices()
@@ -67,15 +69,15 @@ class MerakiWizard(Frame):
             self.infoPopup()
         elif self.selected=='Delete VLAN': #deletes VLAN given the VLAN ID
             self.infoPopup()
-        elif self.selected=='Swap MX Warm Spare': #switches primary and warm MX
+        elif self.selected=='Swap MX Warm Spare': #switches primary and warm spare MX
             swapWarmSpare(self.getNetID()) 
         elif self.selected=='Blink LED': #blinks LED of chosen device
             blinkDevice(self.getDevSerial())
-        elif self.selected=='Update Device Port': #updates port type for specefied port (and vlan on chosen device if not trunk)
+        elif self.selected=='Update Device Port': #updates port given user input
             self.infoPopup()
         elif self.selected=='Reboot Device':
             rebootDevice(self.getDevSerial())
-    def infoPopup(self): #popup menu to get the user input of required parameters
+    def infoPopup(self): #popup menu to get the user input of required parameters when required
         self.selected=self.alter.get()
         self.entry=Toplevel()
         if self.selected=='Add Device': #SN
@@ -83,12 +85,17 @@ class MerakiWizard(Frame):
             self.getInput.pack()
             self.devSnEntry=Entry(self.entry)
             self.devSnEntry.pack()
-        elif self.selected=='Rename Device': #Name
+        elif self.selected=='Rename Device': #Show/event name
             self.getInput=Label(self.entry,text='*Rename device to:')
             self.getInput.pack()
             self.renameEntry=Entry(self.entry)
             self.renameEntry.pack()   
-        elif self.selected=='Bulk Add Address': #Address
+        elif self.selected=='Bulk Rename Device':
+            self.getInput=Label(self.entry,text='*Enter Show/Event name:')
+            self.getInput.pack()
+            self.showName=Entry(self.entry)
+            self.showName.pack()
+        elif self.selected=='Bulk Add Address': #Address: 3650 Cisco Way, San Jose, CA 95134
             self.getInput=Label(self.entry,text='*Enter address:')
             self.getInput.pack()
             self.addrEntry=Entry(self.entry)
@@ -130,19 +137,21 @@ class MerakiWizard(Frame):
             self.vlanEnt.pack()
         self.doneButton=Button(self.entry,text='Done',command=self.quitInput)
         self.doneButton.pack()     
-    def quitInput(self): #on button click, takes the stored entries and calls method given the selected option
+    def quitInput(self): #on button click, takes the stored entries and calls method required
         self.selected=self.alter.get()
         if self.selected=='Add Device':
             self.addDevice()
-        elif self.selected=='Rename Device': #do NOT rename to a name that exists currently, this will make the program bug out
+        elif self.selected=='Rename Device': #do NOT rename to a name that currently exists, this will make the program bug out
             renameDevice(self.getDevSerial(),self.renameEntry.get())
             self.popuDevList()
+        elif self.selected=='Bulk Rename Device':
+            pass
         elif self.selected=='Update Device Port':
             if self.vlanEnt.get(): #if changing to access port and want to change/Add associated VLAN
                 updateDevSwitchportVLAN(
                     self.getDevSerial(),self.idEnt.get(),
                     self.typeEnt.get(),self.vlanEnt.get())
-            else: #if changing to trunk/if no VLAN specified and want to change other info
+            else: #if changing to trunk port
                 updateDevSwitchport(
                     self.getDevSerial(),self.idEnt.get(),
                     self.typeEnt.get())
@@ -168,13 +177,13 @@ class MerakiWizard(Frame):
             if orgs['name']==self.name:
                 self.org_id+=orgs['id']
         return self.org_id
-    def getOrgNetIDs(self): #get list all network IDs in an org given org ID
+    def getOrgNetIDs(self): #get list all network IDs in an org given orgID
         self.net_ids=[]
         for nets in orgNetInfo(self.getOrgID()):
             if nets['organizationId']==self.getOrgID():
                 self.net_ids.append(nets['id'])
         return self.net_ids
-    def getOrgNetNames(self): #get list of all network names given list of netID
+    def getOrgNetNames(self): #get list of all network names given list of orgNetIDs
         self.net_names=[net['name'] for net in orgNetInfo(self.getOrgID())]
         return self.net_names
     def popuNetNames(self,*args): #populates listbox on click per orgNetwork button, refreshes each new click
@@ -183,7 +192,7 @@ class MerakiWizard(Frame):
             self.netMenu.insert(END,name)
 
     ####NETWORK FUNCTIONS####
-    def getNetID(self,*args): #get net ID given net name
+    def getNetID(self,*args): #get net ID given netName
         self.org_nets=orgNetInfo(self.getOrgID())
         self.name=self.netMenu.get(self.netMenu.curselection())
         self.curr_net=''
@@ -194,7 +203,7 @@ class MerakiWizard(Frame):
     def getNetDevSerials(self): #gets SN of all network devices
         self.net_serials=[device['serial'] for device in deviceInfo(self.getNetID())]
         return self.net_serials
-    def setDefaultVlans(self):
+    def setDefaultVlans(self): #populates network with all default TechX VLANs
         self.default=[
             {'id': '100', 'name': 'Management', 'subnet': '10.0.100.0/24', 'appl_ip': '10.0.100.1'},
             {'id': '110', 'name': 'Staff VLAN', 'subnet': '10.0.110.0/24', 'appl_ip': '10.0.110.1'},
@@ -209,9 +218,8 @@ class MerakiWizard(Frame):
 
     ####DEVICE FUNCTIONS####
     def getDevList(self): #gets list of device names in a network, or SN if no name
-        self.net_info=deviceInfo(self.getNetID())
         self.dev_list=[]
-        for dev in self.net_info:
+        for dev in deviceInfo(self.getNetID()):
             if 'name' in dev:
                 self.dev_list.append(dev['name'])
             else:
@@ -232,7 +240,7 @@ class MerakiWizard(Frame):
         return self.curr_dev
     def devInfoClick(self,*args):
         print(specDevInfo(self.getDevSerial()))
-    def bulkAddExcel(self,*args): #Add devices given JLL .xlsx file
+    def autoAddExcel(self,*args): #Add devices given JLL .xlsx file
         self.pattern=re.compile(r"^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$") #xxxx-xxxx-xxxx Meraki SN format checker
         self.file_name=fd.askopenfilename(initialdir='/',title='Select A File',filetypes=(('.xlsx','*.xlsx'),('all files','.')))
         self.wb=xlrd.open_workbook(self.file_name)
@@ -242,7 +250,7 @@ class MerakiWizard(Frame):
             if self.sheet.cell_value(row,40)!='Approved-Cancelled' and self.pattern.match(self.sheet.cell_value(row,24)):
                     self.meraki_devices.append(self.sheet.cell_value(row,24))
         return self.meraki_devices 
-    def bulkRenameExcel(self,*args): #renames devices with model + last 4 digits of SN
+    def autoRenameExcel(self,*args): #renames devices with model + last 4 digits of SN
         for device in deviceInfo(self.getNetID()):
             renameDevice(device['serial'],(device['model']+'_'+device['serial'][-4:]))
     def addDevice(self,*args): #adds a specific device given
