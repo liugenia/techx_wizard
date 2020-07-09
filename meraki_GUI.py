@@ -47,10 +47,16 @@ class MerakiWizard(Frame):
     ####ALTERATION SELECTION HANDLER####
     def AlterMenu(self): #what to do depending on the dropdown option selected
         self.selected=self.alter.get()
-        if self.selected=='Create Network': #creates network
-            self.setDefaultVlans()
+        if self.selected=='Create Network': #creates network selected org
+            self.infoPopup()
+        elif self.selected=='Rename Network': #renames an existing network
+            self.infoPopup() 
         elif self.selected=='Delete Network': #deletes network and all devices
             deleteNetwork(self.getNetID())
+            self.popuNetNames()
+        elif self.selected=='Add Default VLANs': #adds default VLANs used by TechX
+            enableVLANs(self.getNetID())
+            self.setDefaultVlans()
         elif self.selected=='Add Device': #adds a single device to the network
             self.infoPopup()
         elif self.selected=='Bulk Add Devices': #automatically adds all devices on JLL .xlsx file
@@ -80,7 +86,17 @@ class MerakiWizard(Frame):
     def infoPopup(self): #popup menu to get the user input of required parameters when required
         self.selected=self.alter.get()
         self.entry=Toplevel()
-        if self.selected=='Add Device': #SN
+        if self.selected=='Create Network':
+            self.getInput=Label(self.entry,text='*Enter network name:')
+            self.getInput.pack()
+            self.netnameEntry=Entry(self.entry)
+            self.netnameEntry.pack()
+        elif self.selected=='Rename Network':
+            self.getInput=Label(self.entry,text='*Enter network name:')
+            self.getInput.pack()
+            self.renameEntry=Entry(self.entry)
+            self.renameEntry.pack()
+        elif self.selected=='Add Device': #SN
             self.getInput=Label(self.entry,text='*Enter Device SN:')
             self.getInput.pack()
             self.devSnEntry=Entry(self.entry)
@@ -139,7 +155,13 @@ class MerakiWizard(Frame):
         self.doneButton.pack()     
     def quitInput(self): #on button click, takes the stored entries and calls method required
         self.selected=self.alter.get()
-        if self.selected=='Add Device':
+        if self.selected=='Create Network':
+            createNetwork(self.getOrgID(), self.netnameEntry.get(),['appliance', 'switch', 'camera'])
+            self.popuNetNames()
+        elif self.selected=='Rename Network':
+            renameNetwork(self.getNetID(), self.renameEntry.get())
+            self.popuNetNames()
+        elif self.selected=='Add Device':
             self.addDevice()
         elif self.selected=='Rename Device': #do NOT rename to a name that currently exists, this will make the program bug out
             renameDevice(self.getDevSerial(),self.renameEntry.get())

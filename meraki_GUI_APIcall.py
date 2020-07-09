@@ -3,8 +3,10 @@ import os
 
 def commandList():
     commands=[
-        # 'Create Network', ####NEED FULL ORG ADMIN ACCESS FOR THIS####
-        # 'Delete Network', 
+        'Create Network', #done
+        'Rename Network', #done
+        'Delete Network', #done
+        'Add Default VLANs', #done
         'Add Device', #done
         'Bulk Add Devices', #done
         'Rename Device', #done
@@ -16,7 +18,7 @@ def commandList():
         'Delete VLAN', #done
         'Swap MX Warm Spare', #done
         'Blink LED', #done
-        'Reboot Device'
+        'Reboot Device' #done
         ]
     return commands
 
@@ -63,8 +65,16 @@ def createNetwork(org_id,net_name,prod_types):
     dashboard.organizations.createOrganizationNetwork(
     org_id, net_name, prod_types)
 
+#deleteNetwork() API call
 def deleteNetwork(net_id):
     dashboard.networks.deleteNetwork(net_id)
+
+def renameNetwork(net_id, name):
+    dashboard.networks.updateNetwork(net_id, name=name)
+
+def enableVLANs(net_id):
+    dashboard.appliance.updateNetworkApplianceVlansSettings(
+    net_id, vlansEnabled=True)
 
 #claimNetworkDevices() API call
 def claimDevices(net_id,serials):
@@ -119,5 +129,6 @@ def updateVLAN(vlan_id,ip):
 def removeVLAN(net_id,vlan_id):
     dashboard.appliance.deleteNetworkApplianceVlan(net_id, vlan_id)
 
+#rebootDevice() API call
 def rebootDevice(serial):
     dashboard.devices.rebootDevice(serial)
